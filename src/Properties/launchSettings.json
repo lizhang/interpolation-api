@@ -1,0 +1,15 @@
+{
+  "profiles": {
+    "InterpolationApi": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "AWS_PROFILE": "film-dev",
+        "AWS_REGION": "us-east-1",
+        "AWS_DEFAULT_REGION": "us-east-1"
+      },
+      "applicationUrl": "http://localhost:64966"
+    }
+  }
+}

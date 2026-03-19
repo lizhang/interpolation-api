@@ -1,0 +1,17 @@
+{
+    "uploadId": "upl_123",
+    "start": {
+      "key": "uploads/upl_123/start.png",
+      "upload": {
+        "url": "https://bucket.s3.amazonaws.com/",
+        "fields": {}
+      }
+    },
+    "end": {
+      "key": "uploads/upl_123/end.png",
+      "upload": {
+        "url": "https://bucket.s3.amazonaws.com/",
+        "fields": {}
+      }
+    }
+  }

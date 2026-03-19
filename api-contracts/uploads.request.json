@@ -1,0 +1,13 @@
+{
+    "email": "user@example.com",
+    "startFile": {
+      "name": "start.png",
+      "contentType": "image/png",
+      "size": 12345
+    },
+    "endFile": {
+      "name": "end.png",
+      "contentType": "image/png",
+      "size": 67890
+    }
+  }
