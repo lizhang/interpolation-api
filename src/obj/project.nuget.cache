@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "uKaub4xVvNw=",
+  "dgSpecHash": "RGVUkJBY36o=",
   "success": true,
   "projectFilePath": "C:\\code\\interpolation-api\\src\\InterpolationApi.csproj",
   "expectedPackageFiles": [
@@ -23,7 +23,8 @@
     "C:\\Users\\ali_z\\.nuget\\packages\\microsoft.openapi\\2.0.0-preview.11\\microsoft.openapi.2.0.0-preview.11.nupkg.sha512",
     "C:\\Users\\ali_z\\.nuget\\packages\\scalar.aspnetcore\\2.13.1\\scalar.aspnetcore.2.13.1.nupkg.sha512",
     "C:\\Users\\ali_z\\.nuget\\packages\\snapshotrestore.registry\\1.0.1\\snapshotrestore.registry.1.0.1.nupkg.sha512",
-    "C:\\Users\\ali_z\\.nuget\\packages\\swashbuckle.aspnetcore.swaggerui\\10.1.4\\swashbuckle.aspnetcore.swaggerui.10.1.4.nupkg.sha512"
+    "C:\\Users\\ali_z\\.nuget\\packages\\swashbuckle.aspnetcore.swaggerui\\10.1.4\\swashbuckle.aspnetcore.swaggerui.10.1.4.nupkg.sha512",
+    "C:\\Users\\ali_z\\.nuget\\packages\\microsoft.netcore.app.host.linux-x64\\10.0.3\\microsoft.netcore.app.host.linux-x64.10.0.3.nupkg.sha512"
   ],
   "logs": []
 }

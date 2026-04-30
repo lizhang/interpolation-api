@@ -48,3 +48,4 @@ C:\code\interpolation-api\src\obj\Release\net10.0\linux-x64\refint\Interpolation
 C:\code\interpolation-api\src\obj\Release\net10.0\linux-x64\InterpolationApi.pdb
 C:\code\interpolation-api\src\obj\Release\net10.0\linux-x64\InterpolationApi.genruntimeconfig.cache
 C:\code\interpolation-api\src\obj\Release\net10.0\linux-x64\ref\InterpolationApi.dll
+C:\code\interpolation-api\src\obj\Release\net10.0\linux-x64\InterpolationApi.sourcelink.json

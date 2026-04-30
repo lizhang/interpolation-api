@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("InterpolationApi")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a5c2f7054ad5fd0530d67a148f19ebe4e1c55e8e")]
 [assembly: System.Reflection.AssemblyProductAttribute("InterpolationApi")]
 [assembly: System.Reflection.AssemblyTitleAttribute("InterpolationApi")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
