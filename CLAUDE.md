@@ -1,415 +1,239 @@
-# CLAUDE.md - API 
+# CLAUDE.md
 
 ## Project Overview
 
-This project is the backend for a **frame interpolation web application**.
-
-Users upload two key frames and the system generates in-between frames using an AI model.
+Backend for a **frame interpolation web application**. Users upload two key frames; the system generates in-between frames using an AI model.
 
 The backend:
-
-- generates **S3 presigned upload URLs**
-- accepts **job submissions**
-- writes **job metadata to DynamoDB**
-- queues processing jobs in **SQS**
-
-The service is built using:
-
-- .NET 10
-- AWS Lambda
-- Amazon S3
-- Amazon SQS
-- Amazon DynamoDB
-
-The backend intentionally exposes **three endpoints**.
+- generates S3 presigned upload URLs
+- accepts job submissions
+- writes job metadata to DynamoDB
+- queues processing jobs in SQS
 
 ---
 
-# Repository Structure
+## Tech Stack
 
-The repository follows this structure.
-
-project-root
-│
-├─ CLAUDE.md
-│
-├─ api-contracts
-│ ├─ uploads.request.json
-│ ├─ uploads.response.json
-│ ├─ jobs.request.json
-│ └─ jobs.response.json
-│
-├─ .claude
-│ └─ skills
-│ └─ write-operation
-│ └─ SKILL.md
-│
-└─ src
-├─ Operations
-│ ├─ GeneratePresignedUrls
-│ └─ SubmitJob
-│
-├─ Services
-│
-├─ Models
-│
-├─ Configuration
-│
-├─ Extensions
-│
-├─ Program.cs
-│
-├─ appsettings.local.json
-└─ appsettings.production.json
-
-
-Claude must follow this structure when generating code.
+| Concern | Technology |
+|---|---|
+| Runtime | .NET 10 |
+| Hosting | AWS Lambda (HttpApi event source) |
+| Object storage | Amazon S3 |
+| Queue | Amazon SQS |
+| Database | Amazon DynamoDB |
+| HTTP framework | ASP.NET Core (`MapControllers`) |
+| OpenAPI | Microsoft.AspNetCore.OpenApi + Scalar |
+| DI / config | Built-in ASP.NET Core |
 
 ---
 
-# API Contract Source
+## Repository Structure
 
-The canonical API contracts are stored in the **`/api-contracts`** directory.
+```
+project-root/
+├── CLAUDE.md
+├── .claude/
+│   └── skills/write-operation/SKILL.md
+└── src/
+    ├── Controllers/
+    │   ├── UploadsController.cs
+    │   ├── JobsController.cs
+    │   └── StatsController.cs
+    ├── Operations/
+    │   ├── GeneratePresignedUrls/
+    │   │   ├── .instruction/
+    │   │   │   ├── business.md              ← business logic spec
+    │   │   │   ├── uploads.request.json     ← API contract
+    │   │   │   └── uploads.response.json    ← API contract
+    │   │   ├── IGeneratePresignedUrlsOperation.cs
+    │   │   ├── GeneratePresignedUrlsOperation.cs
+    │   │   ├── GeneratePresignedUrlsRequest.cs
+    │   │   └── GeneratePresignedUrlsResponse.cs
+    │   ├── SubmitJob/
+    │   │   ├── .instruction/
+    │   │   │   ├── business.md
+    │   │   │   ├── jobs.request.json
+    │   │   │   └── jobs.response.json
+    │   │   ├── ISubmitJobOperation.cs
+    │   │   ├── SubmitJobOperation.cs
+    │   │   ├── SubmitJobRequest.cs
+    │   │   └── SubmitJobResponse.cs
+    │   └── GetStats/
+    │       ├── .instruction/
+    │       │   ├── business.md
+    │       │   └── stats.response.json
+    │       ├── IGetStatsOperation.cs
+    │       ├── GetStatsOperation.cs
+    │       └── GetStatsResponse.cs
+    ├── Services/
+    │   ├── IS3Service.cs / S3Service.cs
+    │   ├── ISqsService.cs / SqsService.cs
+    │   └── IDynamoDbService.cs / DynamoDbService.cs
+    ├── Models/
+    ├── Configuration/
+    ├── Extensions/
+    ├── Program.cs
+    └── appsettings.*.json
+```
 
-Claude **must treat these JSON files as the authoritative request and response schemas** when generating DTO classes.
-
-Contracts:
-api-contracts/uploads.request.json
-api-contracts/uploads.response.json
-api-contracts/jobs.request.json
-api-contracts/jobs.response.json
-
-
-When implementing an operation:
-
-- read the contract JSON
-- generate request/response DTOs that match the schema
-- do not invent additional fields unless required
-
----
-
-# Endpoints
-
-The system supports exactly **three endpoints**.
-
----
-
-## 0 Health Check
-
-Endpoint
-    GET /api/health
-
-### Behavior
-
-Returns HTTP 200 with `{ "ok": true }`.
-
-No operation class is required. The endpoint is mapped directly in `Program.cs`.
-
----
-
-## 1 Generate Presigned Upload URLs
-
-Endpoint
-    POST /api/uploads
-    Request schema is defined in: api-contracts/uploads.request.json
-    Response schema is defined in: api-contracts/uploads.response.json
-    
-### Behavior
-
-The operation must:
-
-1. validate request payload
-2. generate a unique `uploadId`
-3. generate S3 keys for both files
-4. create **presigned POST uploads**
-5. return upload metadata
-
-### S3 key format
-uploads/{uploadId}/start.png
-uploads/{uploadId}/end.png
-
-### Required responsibilities
-
-- generate `uploadId`
-- generate presigned POST upload data
-- store upload session metadata
-
-Upload session metadata must include:
-email
-uploadId
-startFrameKey
-endFrameKey
-createdAt
-
-
-The upload session must be persisted so it can be used later by `/api/jobs`.
+There is no top-level `/api-contracts/` folder. Contracts live inside each operation's `.instruction/` folder.
 
 ---
 
-## 2 Submit Job
+## Endpoints
 
-Endpoint
-POST /api/jobs
-Request schema:
-api-contracts/jobs.request.json
-Response schema:
-api-contracts/jobs.response.json
+The system exposes exactly **four endpoints**. Do not add others.
 
-### Behavior
+| # | Method | Path | Handler |
+|---|---|---|---|
+| 0 | GET | `/api/health` | `Program.cs` minimal endpoint — no controller, no operation |
+| 1 | POST | `/api/uploads` | `UploadsController` → `GeneratePresignedUrlsOperation` |
+| 2 | POST | `/api/jobs` | `JobsController` → `SubmitJobOperation` |
+| 3 | GET | `/api/stats` | `StatsController` → `GetStatsOperation` |
 
-This operation must:
-
-1. validate request
-2. resolve upload session
-3. generate `jobId`
-4. write job record to DynamoDB
-5. publish job message to SQS
-6. return queued response
+Business logic detail for endpoints 1–3 lives in the respective operation's `.instruction/business.md`.
 
 ---
 
-# DynamoDB Requirements
+## Architecture Layers
 
-A DynamoDB job record must be written when a job is submitted.
+```
+HTTP request
+    └── Controller
+            └── Operation
+                    └── Service
+                            └── AWS SDK
+```
 
-### Table Keys
-Partition Key: email
-Sort Key: jobId
+### Controller
 
-### Required attributes
-email
-jobId
-startFrameKey
-endFrameKey
-createdAt
-resultsJson
+- Lives in `src/Controllers/`
+- Defines HTTP routing (`[Route]`), verb mapping (`[HttpPost]`), and response codes (`[ProducesResponseType]`)
+- Binds the request model and calls `operation.ExecuteAsync(...)`
+- Translates exceptions to HTTP responses: `ArgumentException` → 400, `InvalidOperationException` → 404
+- Contains **no business logic**
 
+### Operation
 
-Example conceptual record
-{
-email: "user@example.com
-",
-jobId: "job_abc",
-startFrameKey: "uploads/upl_123/start.png",
-endFrameKey: "uploads/upl_123/end.png",
-createdAt: "2026-03-06T10:00:00Z",
-resultsJson: ""
-}
+- Lives in `src/Operations/<OperationName>/`
+- Validates the request (throw `ArgumentException` for invalid input)
+- Coordinates business logic — calls services in the correct order
+- Returns a typed response DTO
+- Contains **no raw AWS SDK calls**
 
+### Service
 
-Notes
-
-- `createdAt` must be UTC
-- `resultsJson` must initially be empty
-
----
-
-# SQS Message
-
-When submitting a job, publish a message containing:
-jobId
-email
-uploadId
-startFrameKey
-endFrameKey
-createdAt
-
-
-This message will later be processed by the AI interpolation worker.
+- Lives in `src/Services/`
+- Wraps one AWS resource per service (`S3Service`, `SqsService`, `DynamoDbService`)
+- Exposes a clean interface; the operation only knows the interface
+- Contains **no business logic**
 
 ---
 
-# Architecture Rules
+## .instruction Folder Convention
 
-The backend must follow a **three-layer structure**.
-endpoint → operation → service → AWS SDK
+Every operation folder **must** contain a `.instruction/` subfolder with:
 
-Operations coordinate logic.
+| File | Purpose |
+|---|---|
+| `business.md` | Canonical source for business logic: key formats, DB schema, message shape, validation rules, step sequence |
+| `<resource>.request.json` | Example JSON for the request body |
+| `<resource>.response.json` | Example JSON for the response body |
 
-Services wrap infrastructure.
+When implementing or modifying an operation:
 
----
-
-# Operations Layer
-
-Operations live under:
-src/Operations
-
-Each operation must have its **own folder**.
-
-Example
-Operations/
-GeneratePresignedUrls/
-IGeneratePresignedUrlsOperation.cs
-GeneratePresignedUrlsOperation.cs
-GeneratePresignedUrlsRequest.cs
-GeneratePresignedUrlsResponse.cs
-
-
-Responsibilities
-
-Operations must:
-
-- validate request
-- coordinate business logic
-- call services
-- return response DTOs
-
-Operations must **not contain raw AWS SDK logic**.
+1. Read `.instruction/business.md` first — it is the authoritative spec.
+2. Read the `.instruction/*.request.json` and `.instruction/*.response.json` contracts.
+3. Generate request/response DTOs that exactly match those contracts.
+4. Do not invent fields not in the contract.
 
 ---
 
-# Services Layer
+## Adding a New Operation
 
-Services wrap AWS SDK functionality.
+Follow `.claude/skills/write-operation/SKILL.md`.
 
-All infrastructure access must be implemented inside `Services`.
-
-Example services
-IS3Service
-S3Service
-
-ISqsService
-SqsService
-
-IDynamoDbService
-DynamoDbService
-
-Responsibilities
-
-S3Service
-
-- generate presigned POST uploads
-
-SqsService
-
-- send job messages
-
-DynamoDbService
-
-- write job records
-- read upload sessions
+Summary:
+1. Create `src/Operations/<OperationName>/`
+2. Create `.instruction/` inside it with `business.md` and contract JSON files
+3. Create `IOperationNameOperation.cs`, `OperationNameOperation.cs`, `OperationNameRequest.cs`, `OperationNameResponse.cs`
+4. Create a controller in `src/Controllers/` (or add a method to an existing one)
+5. Register in `src/Extensions/ServiceCollectionExtensions.cs`
 
 ---
 
-# Configuration
+## Coding Rules
 
-The application must only support **two configuration environments**.
-appsettings.local.json
-appsettings.production.json
+Use:
+- `async` / `await` throughout
+- Constructor dependency injection
+- Explicit DTO models (no anonymous types in responses)
+- Strongly typed configuration via `AppSettings`
+- Structured logging (`_logger.LogInformation("... {Field}", value)`)
 
+Avoid:
+- Raw AWS SDK calls inside operations
+- Business logic inside services
+- Repository pattern, CQRS frameworks, over-engineering
 
-Do not add additional configuration files unless explicitly required.
-
-Typical settings
-S3 bucket name
-SQS queue URL
-DynamoDB table name
-AWS region
-
-
----
-
-# Coding Rules
-
-Claude should follow these coding rules.
-
-Use
-
-- async / await
-- constructor dependency injection
-- explicit DTO models
-- strongly typed configuration
-- structured logging
-
-Avoid
-
-- unnecessary frameworks
-- repository pattern
-- CQRS frameworks
-- over-engineering
-
-Keep methods:
-
-- small
-- readable
-- testable
+Keep methods small, readable, and independently testable.
 
 ---
 
-# Logging
+## Logging
 
-Operations should log
+Log in operations:
+- Operation start (include identifying fields, e.g. `Email`, `UploadId`)
+- Key business events (e.g. session created, job queued)
+- Downstream failures (log as Warning or Error before re-throwing)
 
-- start of operation
-- important business events
-- downstream service failures
-
-Never log
-
-- presigned POST fields
-- secrets
-- sensitive payloads
+Never log:
+- Presigned POST fields or URLs
+- Secrets or tokens
+- Full request/response payloads
 
 ---
 
-# Validation
+## Validation
 
-Operations must validate:
+Validate inside the operation before calling any service. Throw `ArgumentException` for missing or invalid input — the controller catches it and returns 400.
 
-- required fields
-- email presence
-- file metadata
-- uploadId presence
-
-Return clear validation errors.
+Required fields to validate:
+- `Email` — must be non-empty
+- `UploadId` — must be non-empty when present
+- File metadata (`ContentType`, `Size > 0`) when processing file uploads
 
 ---
 
-# Skills
+## Configuration
 
-Claude skills are located under:
-.claude/skills
-The project includes a skill for writing operations.
-.claude/skills/write-operation/SKILL.md
+Two configuration files only:
+- `appsettings.local.json`
+- `appsettings.production.json`
 
-Claude should follow this skill whenever implementing new operations.
+Do not add additional environment files.
 
----
-
-# What Claude Should Do
-
-When asked to implement an endpoint:
-
-1. read API contracts in `/api-contracts`
-2. create operation folder
-3. generate DTOs matching contract
-4. create operation interface
-5. create implementation
-6. call service wrappers
-7. register dependency injection
-8. map endpoint
+Configured values (bound to `AppSettings`):
+- `App:S3BucketName`
+- `App:SqsQueueUrl`
+- `App:DynamoDbTableName`
+- `App:AwsRegion`
 
 ---
 
-# What Claude Must Avoid
+## What Claude Must Do
 
-Claude must NOT:
+- Read the operation's `.instruction/business.md` before writing any business logic
+- Read `.instruction/*.request.json` and `.instruction/*.response.json` before writing DTOs
+- Register new operations in `ServiceCollectionExtensions`
+- Add a controller for every new operation
+- Follow the three-layer structure: Controller → Operation → Service
 
-- add endpoints not listed in this document
-- bypass service layer
-- add unnecessary architecture patterns
-- add additional environment configuration files
-- mix AWS SDK code directly into operations
+## What Claude Must Avoid
 
----
-
-# Design Goal
-
-The design goal is a **simple, maintainable, serverless backend** with clear separation between:
-
-- HTTP layer
-- business operations
-- infrastructure services
-
-The codebase should remain easy to extend and easy to reason about.
+- Adding endpoints not listed in this document
+- Placing AWS SDK calls directly in an operation
+- Placing business logic in a service
+- Creating a top-level `/api-contracts/` folder (contracts live in `.instruction/`)
+- Adding extra `appsettings.*.json` files
+- Adding unnecessary architecture layers or frameworks

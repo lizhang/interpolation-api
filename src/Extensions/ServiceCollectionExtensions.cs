@@ -1,6 +1,7 @@
 using Amazon.Runtime;
 using InterpolationApi.Configuration;
 using InterpolationApi.Operations.GeneratePresignedUrls;
+using InterpolationApi.Operations.GetStats;
 using InterpolationApi.Operations.SubmitJob;
 using InterpolationApi.Services;
 
@@ -25,6 +26,7 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<IGeneratePresignedUrlsOperation, GeneratePresignedUrlsOperation>();
         services.AddScoped<ISubmitJobOperation, SubmitJobOperation>();
+        services.AddScoped<IGetStatsOperation, GetStatsOperation>();
 
         return services;
     }

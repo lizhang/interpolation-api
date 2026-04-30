@@ -91,4 +91,50 @@ public class DynamoDbService : IDynamoDbService
 
         _logger.LogInformation("Job record {JobId} saved for {Email}", job.QueueId, job.Email);
     }
+
+    public async Task<(int visits, int submissions)> IncrementVisitAndGetStatsAsync(CancellationToken ct)
+    {
+        var request = new UpdateItemRequest
+        {
+            TableName = _settings.DynamoDbTableName,
+            Key = new Dictionary<string, AttributeValue>
+            {
+                ["email"] = new AttributeValue { S = "app_stats" },
+                ["jobId"] = new AttributeValue { S = "stats" }
+            },
+            UpdateExpression = "ADD visits :one",
+            ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+            {
+                [":one"] = new AttributeValue { N = "1" }
+            },
+            ReturnValues = ReturnValue.ALL_NEW
+        };
+
+        var response = await _dynamoClient.UpdateItemAsync(request, ct);
+
+        var visits = response.Attributes.TryGetValue("visits", out var v) ? int.Parse(v.N) : 0;
+        var submissions = response.Attributes.TryGetValue("submissions", out var s) ? int.Parse(s.N) : 0;
+
+        return (visits, submissions);
+    }
+
+    public async Task IncrementSubmissionAsync(CancellationToken ct)
+    {
+        var request = new UpdateItemRequest
+        {
+            TableName = _settings.DynamoDbTableName,
+            Key = new Dictionary<string, AttributeValue>
+            {
+                ["email"] = new AttributeValue { S = "app_stats" },
+                ["jobId"] = new AttributeValue { S = "stats" }
+            },
+            UpdateExpression = "ADD submissions :one",
+            ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+            {
+                [":one"] = new AttributeValue { N = "1" }
+            }
+        };
+
+        await _dynamoClient.UpdateItemAsync(request, ct);
+    }
 }

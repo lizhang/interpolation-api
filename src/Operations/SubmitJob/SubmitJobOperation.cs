@@ -63,6 +63,15 @@ public class SubmitJobOperation : ISubmitJobOperation
 
         _logger.LogInformation("Job {JobId} queued for {Email}", jobId, request.Email);
 
+        try
+        {
+            await _dynamoDbService.IncrementSubmissionAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to increment submission counter for job {JobId}", jobId);
+        }
+
         return new SubmitJobResponse
         {
             JobId = jobId,

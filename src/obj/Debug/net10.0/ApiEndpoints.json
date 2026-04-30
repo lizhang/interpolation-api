@@ -63,6 +63,29 @@
     ]
   },
   {
+    "ContainingType": "InterpolationApi.Controllers.StatsController",
+    "Method": "Get",
+    "RelativePath": "api/stats",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "InterpolationApi.Operations.GetStats.GetStatsResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ],
+    "Tags": [
+      "Stats"
+    ]
+  },
+  {
     "ContainingType": "InterpolationApi.Controllers.UploadsController",
     "Method": "Post",
     "RelativePath": "api/uploads",
