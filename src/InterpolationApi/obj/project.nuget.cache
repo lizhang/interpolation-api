@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "dgSpecHash": "SJlRVf/q0xE=",
+  "success": true,
+  "projectFilePath": "C:\\code\\interpolation-api\\src\\InterpolationApi\\InterpolationApi.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\ali_z\\.nuget\\packages\\amazon.lambda.apigatewayevents\\2.7.3\\amazon.lambda.apigatewayevents.2.7.3.nupkg.sha512",
+    "C:\\Users\\ali_z\\.nuget\\packages\\amazon.lambda.applicationloadbalancerevents\\2.2.0\\amazon.lambda.applicationloadbalancerevents.2.2.0.nupkg.sha512",
+    "C:\\Users\\ali_z\\.nuget\\packages\\amazon.lambda.aspnetcoreserver\\9.2.1\\amazon.lambda.aspnetcoreserver.9.2.1.nupkg.sha512",
+    "C:\\Users\\ali_z\\.nuget\\packages\\amazon.lambda.aspnetcoreserver.hosting\\1.10.0\\amazon.lambda.aspnetcoreserver.hosting.1.10.0.nupkg.sha512",
+    "C:\\Users\\ali_z\\.nuget\\packages\\amazon.lambda.core\\2.8.1\\amazon.lambda.core.2.8.1.nupkg.sha512",
+    "C:\\Users\\ali_z\\.nuget\\packages\\amazon.lambda.logging.aspnetcore\\4.1.1\\amazon.lambda.logging.aspnetcore.4.1.1.nupkg.sha512",
+    "C:\\Users\\ali_z\\.nuget\\packages\\amazon.lambda.runtimesupport\\1.14.2\\amazon.lambda.runtimesupport.1.14.2.nupkg.sha512",
+    "C:\\Users\\ali_z\\.nuget\\packages\\amazon.lambda.serialization.systemtextjson\\2.4.4\\amazon.lambda.serialization.systemtextjson.2.4.4.nupkg.sha512",
+    "C:\\Users\\ali_z\\.nuget\\packages\\awssdk.core\\4.0.3.15\\awssdk.core.4.0.3.15.nupkg.sha512",
+    "C:\\Users\\ali_z\\.nuget\\packages\\awssdk.dynamodbv2\\4.0.15\\awssdk.dynamodbv2.4.0.15.nupkg.sha512",
+    "C:\\Users\\ali_z\\.nuget\\packages\\awssdk.extensions.netcore.setup\\4.0.3.23\\awssdk.extensions.netcore.setup.4.0.3.23.nupkg.sha512",
+    "C:\\Users\\ali_z\\.nuget\\packages\\awssdk.s3\\4.0.18.7\\awssdk.s3.4.0.18.7.nupkg.sha512",
+    "C:\\Users\\ali_z\\.nuget\\packages\\awssdk.sqs\\4.0.2.15\\awssdk.sqs.4.0.2.15.nupkg.sha512",
+    "C:\\Users\\ali_z\\.nuget\\packages\\awssdk.sso\\4.0.2.14\\awssdk.sso.4.0.2.14.nupkg.sha512",
+    "C:\\Users\\ali_z\\.nuget\\packages\\awssdk.ssooidc\\4.0.3.15\\awssdk.ssooidc.4.0.3.15.nupkg.sha512",
+    "C:\\Users\\ali_z\\.nuget\\packages\\microsoft.aspnetcore.openapi\\10.0.0-preview.3.25172.1\\microsoft.aspnetcore.openapi.10.0.0-preview.3.25172.1.nupkg.sha512",
+    "C:\\Users\\ali_z\\.nuget\\packages\\microsoft.openapi\\2.0.0-preview.11\\microsoft.openapi.2.0.0-preview.11.nupkg.sha512",
+    "C:\\Users\\ali_z\\.nuget\\packages\\scalar.aspnetcore\\2.13.1\\scalar.aspnetcore.2.13.1.nupkg.sha512",
+    "C:\\Users\\ali_z\\.nuget\\packages\\snapshotrestore.registry\\1.0.1\\snapshotrestore.registry.1.0.1.nupkg.sha512",
+    "C:\\Users\\ali_z\\.nuget\\packages\\swashbuckle.aspnetcore.swaggerui\\10.1.4\\swashbuckle.aspnetcore.swaggerui.10.1.4.nupkg.sha512"
+  ],
+  "logs": []
+}

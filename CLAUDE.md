@@ -29,27 +29,16 @@ The backend:
 
 ## Repository Structure
 
-```
-src/
-├── Controllers/
-│   ├── Dtos/           — HTTP request/response DTOs (one file per DTO)
-│   └── JobsController.cs
-├── Operations/
-│   └── SubmitJob/      — example operation
-│       ├── .instruction/
-│       │   ├── business.md          ← authoritative spec
-│       │   ├── jobs.request.json    ← API contract
-│       │   └── jobs.response.json   ← API contract
-│       ├── ISubmitJobOperation.cs
-│       ├── SubmitJobOperation.cs
-│       ├── SubmitJobInput.cs        ← domain input object
-│       └── SubmitJobResult.cs       ← domain result object
-├── Services/           — IS3Service.cs / S3Service.cs, etc.
-├── Extensions/         — ServiceCollectionExtensions.cs
-└── Program.cs
-```
+See [`backend-file-map.md`](.ai/context/backend-file-map.md) — read it before writing or refactoring any code.
 
-Contracts live inside each operation's `.instruction/` folder, not a top-level folder.
+### Pre-Search Protocol
+
+Before searching broadly (Glob, Grep, or any directory listing):
+
+1. Read `.ai/context/backend-file-map.md`
+2. Read `.ai/context/file-dependencies.md`
+3. Then inspect only the files that are likely relevant based on those maps
+4. If the reference is outdated, trust actual code over the reference
 
 ---
 
@@ -64,108 +53,22 @@ The system exposes exactly **four endpoints**. Do not add others.
 | 2 | POST | `/api/jobs` | `JobsController` → `SubmitJobOperation` |
 | 3 | GET | `/api/stats` | `StatsController` → `GetStatsOperation` |
 
-Business logic detail for endpoints 1–3 lives in the respective operation's `.instruction/business.md`.
+Business logic for each endpoint lives in its operation's `.instruction/business.md`.
 
 ---
 
-## Architecture Layers
+## Architecture
 
-```
-HTTP request
-    └── Controller  (maps DTO → domain input, calls operation, maps result → DTO)
-            └── Operation  (uses domain objects, no DTOs)
-                    └── Service
-                            └── AWS SDK
-```
-
-### Controller
-
-- Lives in `src/Controllers/`
-- Defines HTTP routing (`[Route]`), verb mapping (`[HttpPost]`), and response codes (`[ProducesResponseType]`)
-- Binds the HTTP request to a DTO (`src/Controllers/Dtos/`), maps it to a domain input object, calls `operation.ExecuteAsync(...)`
-- Maps the domain result back to a response DTO and returns it
-- Translates exceptions to HTTP responses: `ArgumentException` → 400, `InvalidOperationException` → 404
-- Contains **no business logic**
-
-### Operation
-
-- Lives in `src/Operations/<OperationName>/`
-- Receives and returns domain objects (`<Name>Input`, `<Name>Result`) — never DTOs
-- Validates the input (throw `ArgumentException` for invalid input)
-- Coordinates business logic — calls services in the correct order
-- Contains **no raw AWS SDK calls**
-
-### Service
-
-- Lives in `src/Services/`
-- Wraps one AWS resource per service (`S3Service`, `SqsService`, `DynamoDbService`)
-- Exposes **generic** interfaces — no domain-specific method names, no domain model types as parameters or returns
-- `IDynamoDbService` uses `Dictionary<string, string>` for item attributes; counter operations use dedicated increment methods
-- `ISqsService.SendMessageAsync<T>` accepts any serializable type — the operation decides the message shape
-- Contains **no business logic**
-
----
-
-## .instruction Folder Convention
-
-Every operation folder **must** contain a `.instruction/` subfolder with:
-
-| File | Purpose |
-|---|---|
-| `business.md` | Canonical source for business logic: key formats, DB schema, message shape, validation rules, step sequence |
-| `<resource>.request.json` | Example JSON for the request body |
-| `<resource>.response.json` | Example JSON for the response body |
-
-When implementing or modifying an operation:
-
-1. Read `.instruction/business.md` first — it is the authoritative spec.
-2. Read the `.instruction/*.request.json` and `.instruction/*.response.json` contracts.
-3. Generate request/response DTOs that exactly match those contracts.
-4. Do not invent fields not in the contract.
-
----
-
-## Adding a New Operation/Endpoint
-
-Follow `.claude/skills/implement-endpoint/SKILL.md`.
-
-Summary:
-1. Create `src/Operations/<OperationName>/`
-2. Create `.instruction/` inside it with `business.md` and contract JSON files
-3. Create `IOperationNameOperation.cs`, `OperationNameOperation.cs`, `OperationNameRequest.cs`, `OperationNameResponse.cs`
-4. Create a controller in `src/Controllers/` (or add a method to an existing one)
-5. Register in `src/Extensions/ServiceCollectionExtensions.cs`
-
----
-
-## Coding Rules
-
-Use:
-- `async` / `await` throughout
-- Constructor dependency injection
-- Explicit DTO models (no anonymous types in responses)
-- Strongly typed configuration via `AppSettings`
-- Structured logging (`_logger.LogInformation("... {Field}", value)`)
-- `private` methods when an operation method body exceeds 200 lines
-
-Avoid:
-- Raw AWS SDK calls inside operations
-- Business logic inside services
-- Domain-specific method names on service interfaces (e.g. `SaveUploadSessionAsync`)
-- Domain model types (`JobRecord`, etc.) as service interface parameters or return types
-- Repository pattern, CQRS frameworks, over-engineering
-- Creating a new controller for an endpoint that belongs to an existing workflow — add a method instead
-
-Keep methods small and independently testable.
+Follows the `backend-architecture` skill. For adding new endpoints, follow the `operation-from-instructions` skill.
 
 ---
 
 ## Logging
 
-Log in operations:
-- Operation start (include identifying fields, e.g. `Email`, `UploadId`)
+Log in operations using structured logging (`_logger.LogInformation("... {Field}", value)`):
+- Operation start with identifying fields (e.g. `Email`, `UploadId`)
 - Key business events (e.g. session created, job queued)
-- Downstream failures (log as Warning or Error before re-throwing)
+- Downstream failures as `Warning` or `Error` before re-throwing
 
 Never log:
 - Presigned POST fields or URLs
@@ -176,24 +79,20 @@ Never log:
 
 ## Validation
 
-Validate inside the operation before calling any service. Throw `ArgumentException` for missing or invalid input — the controller catches it and returns 400.
+Validate in the operation before calling any service. Throw `ArgumentException` — the controller maps it to 400.
 
-Required fields to validate:
+Fields always required:
 - `Email` — must be non-empty
 - `UploadId` — must be non-empty when present
-- File metadata (`ContentType`, `Size > 0`) when processing file uploads
+- File metadata: `ContentType` non-empty, `Size > 0`
 
 ---
 
 ## Configuration
 
-Two configuration files only:
-- `appsettings.local.json`
-- `appsettings.production.json`
+Two config files for two enviroment: `appsettings.local.json` and `appsettings.production.json`. Do not add others.
 
-Do not add additional environment files.
-
-Configured values (bound to `AppSettings`):
+Bound to `AppSettings`:
 - `App:S3BucketName`
 - `App:SqsQueueUrl`
 - `App:DynamoDbTableName`
@@ -201,19 +100,8 @@ Configured values (bound to `AppSettings`):
 
 ---
 
-## What Claude Must Do
+## Hard constraints
 
-- Read the operation's `.instruction/business.md` before writing any business logic
-- Read `.instruction/*.request.json` and `.instruction/*.response.json` before writing DTOs
-- Register new operations in `ServiceCollectionExtensions`
-- Add a controller for every new operation
-- Follow the three-layer structure: Controller → Operation → Service
-
-## What Claude Must Avoid
-
-- Adding endpoints not listed in this document
-- Placing AWS SDK calls directly in an operation
-- Placing business logic in a service
-- Creating a top-level `/api-contracts/` folder (contracts live in `.instruction/`)
-- Adding extra `appsettings.*.json` files
-- Adding unnecessary architecture layers or frameworks
+- Do not add endpoints beyond the four listed above
+- Contracts live in each operation's `.instruction/` folder — no top-level `/api-contracts/`
+- Use strongly typed configuration via `AppSettings` — no `IConfiguration` directly in operations
