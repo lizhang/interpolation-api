@@ -19,72 +19,61 @@ public class SubmitJobOperation : ISubmitJobOperation
         _logger = logger;
     }
 
-    public async Task<SubmitJobResponse> ExecuteAsync(SubmitJobRequest request, CancellationToken ct)
+    public async Task<SubmitJobResult> ExecuteAsync(SubmitJobInput input, CancellationToken ct)
     {
-        _logger.LogInformation("SubmitJob started for {Email}, uploadId {UploadId}", request.Email, request.UploadId);
+        _logger.LogInformation("SubmitJob started for {Email}, uploadId {UploadId}", input.Email, input.UploadId);
 
-        Validate(request);
+        Validate(input);
 
-        var session = await _dynamoDbService.GetUploadSessionAsync(request.Email, request.UploadId, ct);
+        var sessionAttrs = await _dynamoDbService.GetItemAsync(input.Email, input.UploadId, ct);
 
-        if (session is null)
+        if (sessionAttrs is null)
         {
-            _logger.LogWarning("Upload session {UploadId} not found for {Email}", request.UploadId, request.Email);
-            throw new InvalidOperationException($"Upload session '{request.UploadId}' not found.");
+            _logger.LogWarning("Upload session {UploadId} not found for {Email}", input.UploadId, input.Email);
+            throw new InvalidOperationException($"Upload session '{input.UploadId}' not found.");
         }
 
-        var jobId = $"job_{Guid.NewGuid():N}";
-        var createdAt = DateTime.UtcNow.ToString("o");
+        var startFrameKey = sessionAttrs["startFrameKey"];
+        var endFrameKey   = sessionAttrs["endFrameKey"];
+        var jobId         = $"job_{Guid.NewGuid():N}";
+        var createdAt     = DateTime.UtcNow.ToString("o");
 
-        var jobRecord = new JobRecord
+        await _dynamoDbService.UpdateItemAsync(input.Email, input.UploadId, new Dictionary<string, string>
         {
-            Email = request.Email,
-            UploadId = request.UploadId,
-            QueueId = jobId,
-            StartFrameKey = session.StartFrameKey,
-            EndFrameKey = session.EndFrameKey,
-            CreatedAt = createdAt,
-            ResultsJson = "",
-        };
+            ["queueId"] = jobId,
+            ["step"]    = "Queued"
+        }, ct);
 
-        await _dynamoDbService.SaveJobRecordAsync(jobRecord, ct);
-
-        var message = new SqsJobMessage
+        await _sqsService.SendMessageAsync(new SqsJobMessage
         {
-            JobId = jobId,
-            Email = request.Email,
-            UploadId = request.UploadId,
-            StartFrameKey = session.StartFrameKey,
-            EndFrameKey = session.EndFrameKey,
-            CreatedAt = createdAt,
-        };
+            JobId         = jobId,
+            Email         = input.Email,
+            UploadId      = input.UploadId,
+            StartFrameKey = startFrameKey,
+            EndFrameKey   = endFrameKey,
+            CreatedAt     = createdAt
+        }, ct);
 
-        await _sqsService.SendJobMessageAsync(message, ct);
-
-        _logger.LogInformation("Job {JobId} queued for {Email}", jobId, request.Email);
+        _logger.LogInformation("Job {JobId} queued for {Email}", jobId, input.Email);
 
         try
         {
-            await _dynamoDbService.IncrementSubmissionAsync(ct);
+            await _dynamoDbService.IncrementCounterAsync("app_stats", "stats", "submissions", ct);
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to increment submission counter for job {JobId}", jobId);
         }
 
-        return new SubmitJobResponse
-        {
-            JobId = jobId,
-            Status = "QUEUED"
-        };
+        return new SubmitJobResult { JobId = jobId, Status = "QUEUED" };
     }
 
-    private static void Validate(SubmitJobRequest request)
+    private static void Validate(SubmitJobInput input)
     {
-        if (string.IsNullOrWhiteSpace(request.Email))
+        if (string.IsNullOrWhiteSpace(input.Email))
             throw new ArgumentException("Email is required.");
 
-        if (string.IsNullOrWhiteSpace(request.UploadId))
+        if (string.IsNullOrWhiteSpace(input.UploadId))
             throw new ArgumentException("UploadId is required.");
     }
 }

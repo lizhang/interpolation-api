@@ -30,53 +30,26 @@ The backend:
 ## Repository Structure
 
 ```
-project-root/
-├── CLAUDE.md
-├── .claude/
-│   └── skills/write-operation/SKILL.md
-└── src/
-    ├── Controllers/
-    │   ├── UploadsController.cs
-    │   ├── JobsController.cs
-    │   └── StatsController.cs
-    ├── Operations/
-    │   ├── GeneratePresignedUrls/
-    │   │   ├── .instruction/
-    │   │   │   ├── business.md              ← business logic spec
-    │   │   │   ├── uploads.request.json     ← API contract
-    │   │   │   └── uploads.response.json    ← API contract
-    │   │   ├── IGeneratePresignedUrlsOperation.cs
-    │   │   ├── GeneratePresignedUrlsOperation.cs
-    │   │   ├── GeneratePresignedUrlsRequest.cs
-    │   │   └── GeneratePresignedUrlsResponse.cs
-    │   ├── SubmitJob/
-    │   │   ├── .instruction/
-    │   │   │   ├── business.md
-    │   │   │   ├── jobs.request.json
-    │   │   │   └── jobs.response.json
-    │   │   ├── ISubmitJobOperation.cs
-    │   │   ├── SubmitJobOperation.cs
-    │   │   ├── SubmitJobRequest.cs
-    │   │   └── SubmitJobResponse.cs
-    │   └── GetStats/
-    │       ├── .instruction/
-    │       │   ├── business.md
-    │       │   └── stats.response.json
-    │       ├── IGetStatsOperation.cs
-    │       ├── GetStatsOperation.cs
-    │       └── GetStatsResponse.cs
-    ├── Services/
-    │   ├── IS3Service.cs / S3Service.cs
-    │   ├── ISqsService.cs / SqsService.cs
-    │   └── IDynamoDbService.cs / DynamoDbService.cs
-    ├── Models/
-    ├── Configuration/
-    ├── Extensions/
-    ├── Program.cs
-    └── appsettings.*.json
+src/
+├── Controllers/
+│   ├── Dtos/           — HTTP request/response DTOs (one file per DTO)
+│   └── JobsController.cs
+├── Operations/
+│   └── SubmitJob/      — example operation
+│       ├── .instruction/
+│       │   ├── business.md          ← authoritative spec
+│       │   ├── jobs.request.json    ← API contract
+│       │   └── jobs.response.json   ← API contract
+│       ├── ISubmitJobOperation.cs
+│       ├── SubmitJobOperation.cs
+│       ├── SubmitJobInput.cs        ← domain input object
+│       └── SubmitJobResult.cs       ← domain result object
+├── Services/           — IS3Service.cs / S3Service.cs, etc.
+├── Extensions/         — ServiceCollectionExtensions.cs
+└── Program.cs
 ```
 
-There is no top-level `/api-contracts/` folder. Contracts live inside each operation's `.instruction/` folder.
+Contracts live inside each operation's `.instruction/` folder, not a top-level folder.
 
 ---
 
@@ -87,7 +60,7 @@ The system exposes exactly **four endpoints**. Do not add others.
 | # | Method | Path | Handler |
 |---|---|---|---|
 | 0 | GET | `/api/health` | `Program.cs` minimal endpoint — no controller, no operation |
-| 1 | POST | `/api/uploads` | `UploadsController` → `GeneratePresignedUrlsOperation` |
+| 1 | POST | `/api/uploads` | `JobsController` → `GeneratePresignedUrlsOperation` |
 | 2 | POST | `/api/jobs` | `JobsController` → `SubmitJobOperation` |
 | 3 | GET | `/api/stats` | `StatsController` → `GetStatsOperation` |
 
@@ -99,8 +72,8 @@ Business logic detail for endpoints 1–3 lives in the respective operation's `.
 
 ```
 HTTP request
-    └── Controller
-            └── Operation
+    └── Controller  (maps DTO → domain input, calls operation, maps result → DTO)
+            └── Operation  (uses domain objects, no DTOs)
                     └── Service
                             └── AWS SDK
 ```
@@ -109,23 +82,26 @@ HTTP request
 
 - Lives in `src/Controllers/`
 - Defines HTTP routing (`[Route]`), verb mapping (`[HttpPost]`), and response codes (`[ProducesResponseType]`)
-- Binds the request model and calls `operation.ExecuteAsync(...)`
+- Binds the HTTP request to a DTO (`src/Controllers/Dtos/`), maps it to a domain input object, calls `operation.ExecuteAsync(...)`
+- Maps the domain result back to a response DTO and returns it
 - Translates exceptions to HTTP responses: `ArgumentException` → 400, `InvalidOperationException` → 404
 - Contains **no business logic**
 
 ### Operation
 
 - Lives in `src/Operations/<OperationName>/`
-- Validates the request (throw `ArgumentException` for invalid input)
+- Receives and returns domain objects (`<Name>Input`, `<Name>Result`) — never DTOs
+- Validates the input (throw `ArgumentException` for invalid input)
 - Coordinates business logic — calls services in the correct order
-- Returns a typed response DTO
 - Contains **no raw AWS SDK calls**
 
 ### Service
 
 - Lives in `src/Services/`
 - Wraps one AWS resource per service (`S3Service`, `SqsService`, `DynamoDbService`)
-- Exposes a clean interface; the operation only knows the interface
+- Exposes **generic** interfaces — no domain-specific method names, no domain model types as parameters or returns
+- `IDynamoDbService` uses `Dictionary<string, string>` for item attributes; counter operations use dedicated increment methods
+- `ISqsService.SendMessageAsync<T>` accepts any serializable type — the operation decides the message shape
 - Contains **no business logic**
 
 ---
@@ -149,9 +125,9 @@ When implementing or modifying an operation:
 
 ---
 
-## Adding a New Operation
+## Adding a New Operation/Endpoint
 
-Follow `.claude/skills/write-operation/SKILL.md`.
+Follow `.claude/skills/implement-endpoint/SKILL.md`.
 
 Summary:
 1. Create `src/Operations/<OperationName>/`
@@ -170,13 +146,17 @@ Use:
 - Explicit DTO models (no anonymous types in responses)
 - Strongly typed configuration via `AppSettings`
 - Structured logging (`_logger.LogInformation("... {Field}", value)`)
+- `private` methods when an operation method body exceeds 200 lines
 
 Avoid:
 - Raw AWS SDK calls inside operations
 - Business logic inside services
+- Domain-specific method names on service interfaces (e.g. `SaveUploadSessionAsync`)
+- Domain model types (`JobRecord`, etc.) as service interface parameters or return types
 - Repository pattern, CQRS frameworks, over-engineering
+- Creating a new controller for an endpoint that belongs to an existing workflow — add a method instead
 
-Keep methods small, readable, and independently testable.
+Keep methods small and independently testable.
 
 ---
 

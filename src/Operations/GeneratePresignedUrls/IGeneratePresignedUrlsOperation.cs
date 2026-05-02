@@ -2,5 +2,5 @@ namespace InterpolationApi.Operations.GeneratePresignedUrls;
 
 public interface IGeneratePresignedUrlsOperation
 {
-    Task<GeneratePresignedUrlsResponse> ExecuteAsync(GeneratePresignedUrlsRequest request, CancellationToken ct);
+    Task<GeneratePresignedUrlsResult> ExecuteAsync(GeneratePresignedUrlsInput input, CancellationToken ct);
 }

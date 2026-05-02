@@ -2,5 +2,5 @@ namespace InterpolationApi.Operations.SubmitJob;
 
 public interface ISubmitJobOperation
 {
-    Task<SubmitJobResponse> ExecuteAsync(SubmitJobRequest request, CancellationToken ct);
+    Task<SubmitJobResult> ExecuteAsync(SubmitJobInput input, CancellationToken ct);
 }

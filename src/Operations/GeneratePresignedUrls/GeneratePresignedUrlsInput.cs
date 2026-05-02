@@ -1,13 +1,13 @@
 namespace InterpolationApi.Operations.GeneratePresignedUrls;
 
-public class GeneratePresignedUrlsRequest
+public class GeneratePresignedUrlsInput
 {
     public string Email { get; set; } = "";
-    public FileMetadata StartFile { get; set; } = new();
-    public FileMetadata EndFile { get; set; } = new();
+    public UploadFile StartFile { get; set; } = new();
+    public UploadFile EndFile { get; set; } = new();
 }
 
-public class FileMetadata
+public class UploadFile
 {
     public string Name { get; set; } = "";
     public string ContentType { get; set; } = "";

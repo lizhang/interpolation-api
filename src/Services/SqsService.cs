@@ -2,7 +2,6 @@ using System.Text.Json;
 using Amazon.SQS;
 using Amazon.SQS.Model;
 using InterpolationApi.Configuration;
-using InterpolationApi.Models;
 using Microsoft.Extensions.Options;
 
 namespace InterpolationApi.Services;
@@ -20,18 +19,16 @@ public class SqsService : ISqsService
         _logger = logger;
     }
 
-    public async Task SendJobMessageAsync(SqsJobMessage message, CancellationToken ct)
+    public async Task SendMessageAsync<T>(T message, CancellationToken ct)
     {
         var body = JsonSerializer.Serialize(message);
 
-        var request = new SendMessageRequest
+        await _sqsClient.SendMessageAsync(new SendMessageRequest
         {
             QueueUrl = _settings.SqsQueueUrl,
             MessageBody = body
-        };
+        }, ct);
 
-        await _sqsClient.SendMessageAsync(request, ct);
-
-        _logger.LogInformation("SQS message sent for job {JobId}", message.JobId);
+        _logger.LogInformation("SQS message sent");
     }
 }

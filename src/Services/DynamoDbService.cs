@@ -1,7 +1,6 @@
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 using InterpolationApi.Configuration;
-using InterpolationApi.Models;
 using Microsoft.Extensions.Options;
 
 namespace InterpolationApi.Services;
@@ -19,122 +18,106 @@ public class DynamoDbService : IDynamoDbService
         _logger = logger;
     }
 
-    public async Task SaveUploadSessionAsync(JobRecord job, CancellationToken ct)
+    public async Task PutItemAsync(string pk, string sk, Dictionary<string, string> attributes, CancellationToken ct)
     {
-        var request = new PutItemRequest
+        var item = new Dictionary<string, AttributeValue>
         {
-            TableName = _settings.DynamoDbTableName,
-            Item = new Dictionary<string, AttributeValue>
-            {
-                ["email"] = new AttributeValue { S = job.Email },
-                ["jobId"] = new AttributeValue { S = job.UploadId },
-                ["queueId"] = new AttributeValue { S = "" },
-                ["startFrameKey"] = new AttributeValue { S = job.StartFrameKey },
-                ["endFrameKey"] = new AttributeValue { S = job.EndFrameKey },
-                ["createdAt"] = new AttributeValue { S = job.CreatedAt },
-                ["ResultsJson"] = new AttributeValue { S = job.ResultsJson },
-                ["step"] = new AttributeValue { S = "Uploaded" },
-            }
+            ["email"] = new AttributeValue { S = pk },
+            ["jobId"] = new AttributeValue { S = sk }
         };
 
-        await _dynamoClient.PutItemAsync(request, ct);
+        foreach (var (key, value) in attributes)
+            item[key] = new AttributeValue { S = value };
 
-        _logger.LogInformation("Upload session {UploadId} saved for {Email}", job.UploadId, job.Email);
+        await _dynamoClient.PutItemAsync(new PutItemRequest { TableName = _settings.DynamoDbTableName, Item = item }, ct);
     }
 
-    public async Task<JobRecord?> GetUploadSessionAsync(string email, string uploadId, CancellationToken ct)
+    public async Task<Dictionary<string, string>?> GetItemAsync(string pk, string sk, CancellationToken ct)
     {
-        var request = new GetItemRequest
+        var response = await _dynamoClient.GetItemAsync(new GetItemRequest
         {
             TableName = _settings.DynamoDbTableName,
             Key = new Dictionary<string, AttributeValue>
             {
-                ["email"] = new AttributeValue { S = email },
-                ["jobId"] = new AttributeValue { S = uploadId },
+                ["email"] = new AttributeValue { S = pk },
+                ["jobId"] = new AttributeValue { S = sk }
             }
-        };
-
-        var response = await _dynamoClient.GetItemAsync(request, ct);
+        }, ct);
 
         if (!response.IsItemSet)
             return null;
 
-        return new JobRecord
-        {
-            Email = response.Item["email"].S,
-            UploadId = response.Item["jobId"].S,
-            StartFrameKey = response.Item["startFrameKey"].S,
-            EndFrameKey = response.Item["endFrameKey"].S,
-            CreatedAt = response.Item["createdAt"].S,
-        };
+        return response.Item
+            .Where(kvp => kvp.Value.S != null)
+            .ToDictionary(kvp => kvp.Key, kvp => kvp.Value.S);
     }
 
-    public async Task SaveJobRecordAsync(JobRecord job, CancellationToken ct)
+    // updates must be non-empty; field names must not be DynamoDB reserved words
+    public async Task UpdateItemAsync(string pk, string sk, Dictionary<string, string> updates, CancellationToken ct)
     {
-        var request = new UpdateItemRequest
+        var setParts = new List<string>();
+        var expressionValues = new Dictionary<string, AttributeValue>();
+        var index = 0;
+
+        foreach (var (key, value) in updates)
+        {
+            var placeholder = $":v{index++}";
+            setParts.Add($"{key} = {placeholder}");
+            expressionValues[placeholder] = new AttributeValue { S = value };
+        }
+
+        await _dynamoClient.UpdateItemAsync(new UpdateItemRequest
         {
             TableName = _settings.DynamoDbTableName,
             Key = new Dictionary<string, AttributeValue>
-             {
-                { "email", new AttributeValue { S = job.Email } },
-                { "jobId", new AttributeValue { S = job.UploadId } }
+            {
+                ["email"] = new AttributeValue { S = pk },
+                ["jobId"] = new AttributeValue { S = sk }
             },
-            UpdateExpression = "SET queueId = :q, step = :s",
+            UpdateExpression = "SET " + string.Join(", ", setParts),
+            ExpressionAttributeValues = expressionValues
+        }, ct);
+    }
+
+    // field is a compile-time constant from the operation layer — direct interpolation is intentional
+    public async Task IncrementCounterAsync(string pk, string sk, string field, CancellationToken ct)
+    {
+        await _dynamoClient.UpdateItemAsync(new UpdateItemRequest
+        {
+            TableName = _settings.DynamoDbTableName,
+            Key = new Dictionary<string, AttributeValue>
+            {
+                ["email"] = new AttributeValue { S = pk },
+                ["jobId"] = new AttributeValue { S = sk }
+            },
+            UpdateExpression = $"ADD {field} :one",
             ExpressionAttributeValues = new Dictionary<string, AttributeValue>
             {
-                [":q"] = new AttributeValue { S = job.QueueId },
-                [":s"] = new AttributeValue { S = "Queued" }
+                [":one"] = new AttributeValue { N = "1" }
             }
-        };
-
-        await _dynamoClient.UpdateItemAsync(request, ct);
-
-        _logger.LogInformation("Job record {JobId} saved for {Email}", job.QueueId, job.Email);
+        }, ct);
     }
 
-    public async Task<(int visits, int submissions)> IncrementVisitAndGetStatsAsync(CancellationToken ct)
+    public async Task<Dictionary<string, long>> IncrementAndGetAsync(string pk, string sk, string field, CancellationToken ct)
     {
-        var request = new UpdateItemRequest
+        var response = await _dynamoClient.UpdateItemAsync(new UpdateItemRequest
         {
             TableName = _settings.DynamoDbTableName,
             Key = new Dictionary<string, AttributeValue>
             {
-                ["email"] = new AttributeValue { S = "app_stats" },
-                ["jobId"] = new AttributeValue { S = "stats" }
+                ["email"] = new AttributeValue { S = pk },
+                ["jobId"] = new AttributeValue { S = sk }
             },
-            UpdateExpression = "ADD visits :one",
+            UpdateExpression = $"ADD {field} :one",
             ExpressionAttributeValues = new Dictionary<string, AttributeValue>
             {
                 [":one"] = new AttributeValue { N = "1" }
             },
             ReturnValues = ReturnValue.ALL_NEW
-        };
+        }, ct);
 
-        var response = await _dynamoClient.UpdateItemAsync(request, ct);
-
-        var visits = response.Attributes.TryGetValue("visits", out var v) ? int.Parse(v.N) : 0;
-        var submissions = response.Attributes.TryGetValue("submissions", out var s) ? int.Parse(s.N) : 0;
-
-        return (visits, submissions);
-    }
-
-    public async Task IncrementSubmissionAsync(CancellationToken ct)
-    {
-        var request = new UpdateItemRequest
-        {
-            TableName = _settings.DynamoDbTableName,
-            Key = new Dictionary<string, AttributeValue>
-            {
-                ["email"] = new AttributeValue { S = "app_stats" },
-                ["jobId"] = new AttributeValue { S = "stats" }
-            },
-            UpdateExpression = "ADD submissions :one",
-            ExpressionAttributeValues = new Dictionary<string, AttributeValue>
-            {
-                [":one"] = new AttributeValue { N = "1" }
-            }
-        };
-
-        await _dynamoClient.UpdateItemAsync(request, ct);
+        return response.Attributes
+            .Where(kvp => kvp.Value.N != null)
+            .ToDictionary(kvp => kvp.Key, kvp => long.Parse(kvp.Value.N));
     }
 }

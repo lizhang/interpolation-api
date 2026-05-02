@@ -1,3 +1,4 @@
+using InterpolationApi.Controllers.Dtos;
 using InterpolationApi.Operations.GetStats;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,7 +13,7 @@ public class StatsController(IGetStatsOperation operation) : ControllerBase
     [ProducesResponseType<GetStatsResponse>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Get(CancellationToken ct)
     {
-        var response = await operation.ExecuteAsync(ct);
-        return Ok(response);
+        var result = await operation.ExecuteAsync(ct);
+        return Ok(new GetStatsResponse { Visits = result.Visits, Submissions = result.Submissions });
     }
 }

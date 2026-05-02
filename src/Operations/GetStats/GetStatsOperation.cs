@@ -13,16 +13,16 @@ public class GetStatsOperation : IGetStatsOperation
         _logger = logger;
     }
 
-    public async Task<GetStatsResponse> ExecuteAsync(CancellationToken ct)
+    public async Task<AppStats> ExecuteAsync(CancellationToken ct)
     {
         _logger.LogInformation("GetStats started");
 
-        var (visits, submissions) = await _dynamoDbService.IncrementVisitAndGetStatsAsync(ct);
+        var counters = await _dynamoDbService.IncrementAndGetAsync("app_stats", "stats", "visits", ct);
 
-        return new GetStatsResponse
+        return new AppStats
         {
-            Visits = visits,
-            Submissions = submissions
+            Visits      = counters.TryGetValue("visits",      out var v) ? (int)v : 0,
+            Submissions = counters.TryGetValue("submissions", out var s) ? (int)s : 0
         };
     }
 }

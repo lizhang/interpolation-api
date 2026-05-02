@@ -48,5 +48,4 @@ C:\code\interpolation-api\src\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerUI
 C:\code\interpolation-api\src\bin\Debug\net10.0\appsettings.json
 C:\code\interpolation-api\src\bin\Debug\net10.0\AWSSDK.SSO.dll
 C:\code\interpolation-api\src\bin\Debug\net10.0\AWSSDK.SSOOIDC.dll
-C:\code\interpolation-api\src\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt
 C:\code\interpolation-api\src\obj\Debug\net10.0\InterpolationApi.sourcelink.json

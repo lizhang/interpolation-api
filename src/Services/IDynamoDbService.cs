@@ -1,12 +1,10 @@
-using InterpolationApi.Models;
-
 namespace InterpolationApi.Services;
 
 public interface IDynamoDbService
 {
-    Task SaveUploadSessionAsync(JobRecord session, CancellationToken ct);
-    Task<JobRecord?> GetUploadSessionAsync(string email, string uploadId, CancellationToken ct);
-    Task SaveJobRecordAsync(JobRecord job, CancellationToken ct);
-    Task<(int visits, int submissions)> IncrementVisitAndGetStatsAsync(CancellationToken ct);
-    Task IncrementSubmissionAsync(CancellationToken ct);
+    Task PutItemAsync(string pk, string sk, Dictionary<string, string> attributes, CancellationToken ct);
+    Task<Dictionary<string, string>?> GetItemAsync(string pk, string sk, CancellationToken ct);
+    Task UpdateItemAsync(string pk, string sk, Dictionary<string, string> updates, CancellationToken ct);
+    Task IncrementCounterAsync(string pk, string sk, string field, CancellationToken ct);
+    Task<Dictionary<string, long>> IncrementAndGetAsync(string pk, string sk, string field, CancellationToken ct);
 }

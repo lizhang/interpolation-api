@@ -1,4 +1,4 @@
-namespace InterpolationApi.Operations.GeneratePresignedUrls;
+namespace InterpolationApi.Controllers.Dtos;
 
 public class GeneratePresignedUrlsResponse
 {

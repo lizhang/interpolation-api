@@ -2,5 +2,5 @@ namespace InterpolationApi.Operations.GetStats;
 
 public interface IGetStatsOperation
 {
-    Task<GetStatsResponse> ExecuteAsync(CancellationToken ct);
+    Task<AppStats> ExecuteAsync(CancellationToken ct);
 }
