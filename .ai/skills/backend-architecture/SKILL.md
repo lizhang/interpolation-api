@@ -1,3 +1,8 @@
+---
+name: backend-architecture
+description: Backend Architecture Enforcement
+---
+
 # Skill: Backend Architecture Enforcement (C# Service)
 
 ## Purpose

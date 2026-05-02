@@ -69,6 +69,10 @@
               "target": "Package",
               "version": "[18.0.0, )",
               "versionOverride": "[18.0.0, )"
+            },
+            "Moq": {
+              "target": "Package",
+              "version": "[4.20.72, )"
             }
           },
           "imports": [

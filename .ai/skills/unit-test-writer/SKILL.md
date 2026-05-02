@@ -1,3 +1,8 @@
+---
+name: unit-test-writer
+description: Generate MSTest unit tests using Moq and built-in assertions
+---
+
 # Skill: MSTest Unit Test Writer
 
 ## Purpose
@@ -182,7 +187,7 @@ Follow existing project convention.
 If none exists:
 
 ```
-tests/UnitTests/<Layer>/<ClassName>Tests.cs
+InterpolationApiTest/<Layer>/<ClassName>Tests.cs
 ```
 
 Examples:

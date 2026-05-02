@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("InterpolationApiTest")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c54ee57fea3c90ac19dd583a7d676470492f240c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+48c10e97b15100ac0c508a4084b41e7140e9fdd9")]
 [assembly: System.Reflection.AssemblyProductAttribute("InterpolationApiTest")]
 [assembly: System.Reflection.AssemblyTitleAttribute("InterpolationApiTest")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

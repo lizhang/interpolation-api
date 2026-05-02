@@ -3,9 +3,13 @@
 **Read this file before writing or refactoring any code.**
 
 ```
-src/
+InterpolationApi/
+├── InterpolationApi.csproj
 ├── Program.cs
 ├── appsettings.json
+│
+├── Properties/
+│   └── launchSettings.json
 │
 ├── Configuration/
 │   └── AppSettings.cs
@@ -55,9 +59,12 @@ src/
 │       └── AppStats.cs
 │
 └── Services/
-    ├── IS3Service.cs / S3Service.cs
-    ├── ISqsService.cs / SqsService.cs
-    └── IDynamoDbService.cs / DynamoDbService.cs
+    ├── IS3Service.cs
+    ├── S3Service.cs
+    ├── ISqsService.cs
+    ├── SqsService.cs
+    ├── IDynamoDbService.cs
+    └── DynamoDbService.cs
 ```
 
 **Keep this file up to date whenever files are added or removed.**

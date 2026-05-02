@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Path \"C:\\\\code\\\\interpolation-api\" -Force | ForEach-Object { $_.Name })",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\code\\\\interpolation-api\\\\src\" -Recurse | ForEach-Object { if \\($_.PSIsContainer\\) { \"[DIR]  \" + $_.FullName } else { \"[FILE] \" + $_.FullName } } | Sort-Object)",
+      "PowerShell(Get-ChildItem *)"
+    ]
+  }
+}

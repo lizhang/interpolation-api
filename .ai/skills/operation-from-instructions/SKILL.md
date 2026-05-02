@@ -1,3 +1,8 @@
+---
+name: operation-from-instructions
+description: Generate a complete operation (domain objects, interface, implementation, controller method, DI) from an operation's `.instruction/` folder.
+---
+
 # Skill: Operation From Instructions
 
 ## Purpose
