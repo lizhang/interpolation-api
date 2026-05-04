@@ -103,6 +103,7 @@ When generating or refactoring code:
 * Follow Controller → Operation → Service flow strictly
 * Reject designs that violate separation of concerns
 * Suggest refactoring when logic is misplaced
+- Use strongly typed configuration via `AppSettings`
 
 ---
 
@@ -113,9 +114,23 @@ When generating or refactoring code:
 * Fat Services with business logic
 * Large methods without decomposition
 * Missing interfaces for Operations/Services
-
+* no `IConfiguration` directly in operations
 ---
 
 ## Example Flow
 
 Controller → Operation → Service → Infrastructure
+
+## Logging
+
+Log in operations using structured logging (`_logger.LogInformation("... {Field}", value)`):
+- Operation start with identifying fields (e.g. `Email`, `UploadId`)
+- Key business events (e.g. session created, job queued)
+- Downstream failures as `Warning` or `Error` before re-throwing
+
+Never log:
+- Presigned POST fields or URLs
+- Secrets or tokens
+- Full request/response payloads
+
+---

@@ -44,64 +44,18 @@ Before searching broadly (Glob, Grep, or any directory listing):
 
 ## Endpoints
 
-The system exposes exactly **four endpoints**. Do not add others.
-
-| # | Method | Path | Handler |
-|---|---|---|---|
-| 0 | GET | `/api/health` | `Program.cs` minimal endpoint — no controller, no operation |
-| 1 | POST | `/api/uploads` | `JobsController` → `GeneratePresignedUrlsOperation` |
-| 2 | POST | `/api/jobs` | `JobsController` → `SubmitJobOperation` |
-| 3 | GET | `/api/stats` | `StatsController` → `GetStatsOperation` |
-
 Business logic for each endpoint lives in its operation's `.instruction/business.md`.
 
 ---
 
 ## Architecture
 
-Follows the `backend-architecture` skill. For adding new endpoints, follow the `operation-from-instructions` skill.
-
----
-
-## Logging
-
-Log in operations using structured logging (`_logger.LogInformation("... {Field}", value)`):
-- Operation start with identifying fields (e.g. `Email`, `UploadId`)
-- Key business events (e.g. session created, job queued)
-- Downstream failures as `Warning` or `Error` before re-throwing
-
-Never log:
-- Presigned POST fields or URLs
-- Secrets or tokens
-- Full request/response payloads
-
----
-
-## Validation
-
-Validate in the operation before calling any service. Throw `ArgumentException` — the controller maps it to 400.
-
-Fields always required:
-- `Email` — must be non-empty
-- `UploadId` — must be non-empty when present
-- File metadata: `ContentType` non-empty, `Size > 0`
+Follows the `backend-architecture` skill. For adding new endpoints, new funcionality, new operation, follow the `operation-from-instructions` skill.
 
 ---
 
 ## Configuration
 
-Two config files for two enviroment: `appsettings.local.json` and `appsettings.production.json`. Do not add others.
-
-Bound to `AppSettings`:
-- `App:S3BucketName`
-- `App:SqsQueueUrl`
-- `App:DynamoDbTableName`
-- `App:AwsRegion`
+Follows the `configuration` skill. No hardcoded configuration values (bucket names, queue URLs, table names, region strings, ARNs) anywhere in C# source files.
 
 ---
-
-## Hard constraints
-
-- Do not add endpoints beyond the four listed above
-- Contracts live in each operation's `.instruction/` folder — no top-level `/api-contracts/`
-- Use strongly typed configuration via `AppSettings` — no `IConfiguration` directly in operations
