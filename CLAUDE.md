@@ -50,12 +50,22 @@ Business logic for each endpoint lives in its operation's `.instruction/business
 
 ## Architecture
 
-Follows the `backend-architecture` skill. For adding new endpoints, new funcionality, new operation, follow the `operation-from-instructions` skill.
+Follows the `backend-architecture` skill.
 
 ---
 
 ## Configuration
 
 Follows the `configuration` skill. No hardcoded configuration values (bucket names, queue URLs, table names, region strings, ARNs) anywhere in C# source files.
+
+---
+
+## Commands
+
+| Command | Usage |
+|---|---|
+| `/operation-from-instructions <OperationFolder>` | Generate a complete operation (domain objects, interface, implementation, controller method, DI) from an `.instruction/` folder |
+| `/unit-test-writer <ClassName>.<MethodName>` | Generate MSTest unit tests using Moq for a specific method |
+| `/code-review` | Spawn a sub-agent to review changed files against architecture and configuration rules; writes findings to `.\review\{datetime}_review.txt` |
 
 ---
